@@ -1,8 +1,31 @@
 from bs4 import BeautifulSoup
-import requests
+import requests,string,csv
 from tqdm import tqdm
+import random
+GLOBAL_RANDOM_IDS = []
+data = {}
+def clean_quote(quote,category = None):
+    for quote in quote_element:
+        key = random_key()
+        q = quote.find('div',class_ = 'quoteText')
+        q = q.get_text(strip=True).replace("“","").replace("”","").split("―")
+        quote = q[0]
+        author = q[1].split(',')[0]
+        try:
+            source = q[1].split(',')[1]
+        except:
+            source = ""
+        x = list(data.keys())
+        data[key] = {'quote':quote,'author':author,'source':source,'category':category}
 
-
+def random_key():
+    c = string.ascii_letters + string.digits
+    key =  ''.join(random.choice(c) for i in range(20))
+    if key not in GLOBAL_RANDOM_IDS:
+        GLOBAL_RANDOM_IDS.append(key)
+        return key
+    else:
+        random_key()
 
 url = 'https://www.goodreads.com/quotes'
 
@@ -26,32 +49,32 @@ categories.remove("Love  Quotes")
 categories.remove("Inspirational  Quotes")
 categories = [x.lower() for x in categories]
 categories = [x.replace(" ","-") for x in categories]
-print(categories)
 # Find all the <a> elements within the <ul> element
-
-data = {}
-
-for i in tqdm(range(100)):
-    durl = url + '/tag/' + 'love' + '?page=' + str(i+1)
-    response = requests.get(durl)
-    html_soup = BeautifulSoup(response.text, 'html.parser')
-    quote_element = html_soup.find_all('div',class_ = 'quote mediumText')
-    
-def clean_quote(quote):
-    data ={}
-    for quote in quote_element:
-        q = quote.find('div',class_ = 'quoteText')
-        q = q.get_text(strip=True).replace("“","").replace("”","").split("―")
-        quote = q[0]
-        author = q[1].split(',')[0]
+for category in tqdm(categories):
+    print("Scraping category: ",category)
+    for i in tqdm(range(100)):
+        durl = url + '/tag/' + category + '?page=' + str(i+1)
+        response = requests.get(durl)
+        html_soup = BeautifulSoup(response.text, 'html.parser')
+        quote_element = html_soup.find_all('div',class_ = 'quote mediumText')
         try:
-            source = q[1].split(',')[1]
+            clean_quote(quote_element,category = 'love')
         except:
-            source = ""
-        x = list(data.keys())
-        if len(x) == 0:
-            data[1] = {'quote':quote,'author':author,'source':source}
-        else:
-            data[max(x)+1] = {'quote':quote,'author':author,'source':source}
+            continue
 
-        return data
+
+csv_file = 'data.csv'
+
+# Open the CSV file for writing
+with open(csv_file, 'w', newline='') as file:
+    writer = csv.writer(file)
+
+    # Write the header row
+    writer.writerow(['Key', 'Author', 'Quote'])
+
+    # Write the data rows
+    for key, values in data.items():
+        try:
+            writer.writerow([key, values['author'], values['quote']])
+        except:
+            continue
