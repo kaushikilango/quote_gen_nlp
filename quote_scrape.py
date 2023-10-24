@@ -58,9 +58,9 @@ for category in tqdm(categories):
         html_soup = BeautifulSoup(response.text, 'html.parser')
         quote_element = html_soup.find_all('div',class_ = 'quote mediumText')
         try:
-            clean_quote(quote_element,category = 'love')
+            clean_quote(quote_element,category)
         except:
-            continue
+            continue    
 
 
 csv_file = 'data.csv'
