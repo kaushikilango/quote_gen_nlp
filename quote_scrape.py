@@ -4,6 +4,7 @@ from tqdm import tqdm
 import random
 GLOBAL_RANDOM_IDS = []
 data = {}
+csv_file = 'data.csv'
 def clean_quote(quote,category = None):
     for quote in quote_element:
         key = random_key()
@@ -17,6 +18,21 @@ def clean_quote(quote,category = None):
             source = ""
         x = list(data.keys())
         data[key] = {'quote':quote,'author':author,'source':source,'category':category}
+
+def write_to_csv(data):
+    with open(csv_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+
+        # Write the header row
+        writer.writerow(['Key', 'Author', 'Quote','Source','Category'])
+
+        # Write the data rows
+        for key, values in data.items():
+            try:
+                writer.writerow([key, values['author'], values['quote'],values['source'],values['category']])
+            except:
+                continue
+
 
 def random_key():
     c = string.ascii_letters + string.digits
@@ -50,9 +66,9 @@ categories.remove("Inspirational  Quotes")
 categories = [x.lower() for x in categories]
 categories = [x.replace(" ","-") for x in categories]
 # Find all the <a> elements within the <ul> element
-for category in tqdm(categories):
+for category in categories:
     print("Scraping category: ",category)
-    for i in tqdm(range(100)):
+    for i in range(100):
         durl = url + '/tag/' + category + '?page=' + str(i+1)
         response = requests.get(durl)
         html_soup = BeautifulSoup(response.text, 'html.parser')
@@ -60,21 +76,6 @@ for category in tqdm(categories):
         try:
             clean_quote(quote_element,category)
         except:
-            continue    
-
-
-csv_file = 'data.csv'
-
-# Open the CSV file for writing
-with open(csv_file, 'w', newline='') as file:
-    writer = csv.writer(file)
-
-    # Write the header row
-    writer.writerow(['Key', 'Author', 'Quote'])
-
-    # Write the data rows
-    for key, values in data.items():
-        try:
-            writer.writerow([key, values['author'], values['quote']])
-        except:
             continue
+
+write_to_csv(data)
